@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1440">
+    <title>Ist KI neutral? — System Interface</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 2. OVERRIDE FÜR DAS INFO-MODAL: Mehr Durchsichtigkeit! */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.25) !important;
+            /* Vorher 0.7 - jetzt viel heller! */
+            backdrop-filter: blur(1.5px);
+            /* Cooler Glas-Effekt bleibt */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .modal-window {
+            width: 30vw !important;
+            min-width: 300px !important;
+            background: #000000 !important;
+            border: 1px solid rgba(0, 255, 65, 0.5) !important;
+            box-shadow: 4px 4px 0px #000000, 5px 5px 0px rgba(0, 255, 65, 0.1) !important;
+            position: relative;
+            padding: 0 !important;
+        }
+
+        /* Scanline-Effekt */
+        .modal-window::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 65, 0.25) 51%);
+            background-size: 100% 4px;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Die Ecken fürs Modal */
+        .modal-window .corner-tl,
+        .modal-window .corner-bl,
+        .modal-window .corner-tr,
+        .modal-window .corner-br {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            display: block;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .modal-window .corner-tl {
+            top: 0;
+            left: 0;
+            border-top: 1px solid #00ff41;
+            border-left: 1px solid #00ff41;
+        }
+
+        .modal-window .corner-bl {
+            bottom: 0;
+            left: 0;
+            border-bottom: 1px solid #00ff41;
+            border-left: 1px solid #00ff41;
+        }
+
+        .modal-window .corner-tr {
+            top: 0;
+            right: 0;
+            border-top: 1px solid #00ff41;
+            border-right: 1px solid #00ff41;
+        }
+
+        .modal-window .corner-br {
+            bottom: 0;
+            right: 0;
+            border-bottom: 1px solid #00ff41;
+            border-right: 1px solid #00ff41;
+        }
+
+        /* Exakt die Header-Klasse aus sprache.html */
+        .box-header-modal {
+            padding: 8px 15px;
+            color: #00ff41;
+            font-size: 12px;
+            font-family: var(--font-mono), monospace;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+        }
+
+        /* Exakt die Content-Klasse aus sprache.html */
+        .box-content-modal {
+            padding: 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Exakt die Data-Stream-Klasse aus sprache.html */
+        .data-stream-modal {
+            font-size: 11px !important;
+            line-height: 1.8 !important;
+            letter-spacing: 0.8px !important;
+            font-family: var(--font-mono), monospace !important;
+            color: rgba(0, 255, 65, 0.8);
+            margin: 0 0 10px 0;
+        }
+
+        /* Der Schließen-Button */
+        .modal-close {
+            color: #00ff41 !important;
+            background: transparent !important;
+            border: none !important;
+            font-family: var(--font-mono), monospace !important;
+            cursor: pointer;
+            transition: text-shadow 0.2s;
+            font-size: 12px;
+            padding: 0;
+        }
+
+        .modal-close:hover {
+            text-shadow: 0 0 8px #00ff41;
+            color: #ffffff !important;
+        }
+
+        /* Decorative overlay elements must NEVER steal mouse events */
+        .grid-overlay,
+        .vertical-glitch-line,
+        .bg-vertical-glitch-line-strong,
+        .bg-scanline-sweep {
+            pointer-events: none !important;
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg-grid"></div>
+    <div class="crt-overlay"></div>
+    <div class="scanlines"></div>
+    <div class="grain"></div>
+    <div class="monitor-scan"></div>
+    <div class="coordinate-grid"></div>
+
+    <div class="os-container">
+
+        <header class="os-header">
+            <div class="header-main">
+                <div class="system-label">SYSTEM_UNBIASED_01.OS</div>
+                <h1 class="query-line">QUERY: wie neutral ist künstliche intelligenz? <span
+                        class="header-cursor">_</span></h1>
+                <p class="os-subtitle">Eine Reihe von Experimenten zu Sprache, Bild und Ton</p>
+            </div>
+            <div class="header-meta">
+                <span class="meta-link" id="info-trigger" data-text="no output without input">no output without
+                    input</span>
+            </div>
+        </header>
+
+        <div id="info-modal" class="modal-overlay hidden">
+            <div class="modal-window">
+                <div class="corner-tl"></div>
+                <div class="corner-tr"></div>
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+
+                <div class="box-header-modal">
+                    <span>[ARCHIVE_INFO.SYS]</span>
+                    <button class="modal-close" id="info-close">[x]</button>
+                </div>
+
+                <div class="box-content-modal">
+                    <p class="data-stream-modal">&gt; Diese Website entstand im Kurs "Machine Unlearning" an der
+                        Hochschule Düsseldorf.</p>
+                    <p class="data-stream-modal">&gt; Sie ist das Resultat einer monatelangen, kritischen
+                        Auseinandersetzung mit aktuellen KI-Tools. Passend zur Thematik wurde der Code für dieses
+                        Interface
+                        mithilfe der Programmier-KI "Antigravity" und Google Gemini generiert.</p>
+                    <br>
+                    <p class="data-stream-modal">&gt; KONZEPT: Die Website ist bewusst wie ein altes, instabiles
+                        Betriebssystem gestaltet. Das Design macht sichtbar, was oft übersehen wird: Menschliche
+                        Vorurteile (Bias) sind keine Ausnahmen, sondern wie Systemfehler tief im Kern unserer
+                        Technologie verwurzelt.</p>
+                    <p class="data-stream-modal">&gt; INTERAKTION: Dieses Interface lädt dazu ein, im System nach
+                        Objektivität zu suchen. Doch die Suche nach einem neutralen Output wird, genau wie in der
+                        Realität, zwangsläufig ins Leere laufen.</p>
+                    <br>
+                    <p class="data-stream-modal">&gt; SYSTEM-WARNUNG [TEMPORAL_DATA]: KI-Modelle erhalten kontinuierlich
+                        Updates und Filter, die problematische Outputs nachträglich verstecken sollen. Die hier
+                        dokumentierten Experimente sind archivierte Momentaufnahmen. Doch auch wenn die technologische
+                        Oberfläche gepatcht wird, bleibt das Fundament der Trainingsdaten voreingenommen. Die Symptome
+                        ändern sich, das Kernproblem bleibt.</p>
+
+                    <br>
+                    <p class="data-stream-modal">&gt; HYPOTHESE: KI-Modelle gelten oft als objektive Instanzen. Doch sie
+                        werden mit unseren menschlichen, fehlerhaften Daten trainiert. Die Prämisse lautet: No output
+                        without input.</p>
+                    <p class="data-stream-modal">&gt; ERGEBNIS: Die Maschine spiegelt uns wider. Algorithmen
+                        reproduzieren westliche, stereotypische und patriarchale Mehrheitsmuster.</p>
+                    <p class="data-stream-modal">&gt; Sprache ist nie neutral. Systeme sind nie neutral.</p>
+                    <p class="data-stream-modal" style="color: rgba(0, 255, 65, 0.4); margin-top: 15px;">&gt; init
+                        search_for_neutrality.exe ... Viel Erfolg.<span class="block-cursor"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <main class="os-main">
+
+            <div class="prompt-section">
+                <div class="micro-label">INPUT STREAM</div>
+                <div class="prompt-line" id="prompt-line">
+                    <span class="prompt-symbol">&gt;</span>
+                    <span class="prompt-text" id="prompt-text">enter a prompt</span>
+                    <span class="cursor" id="cursor">_</span>
+                    <div class="tooltip" id="prompt-tooltip">click to initialize</div>
+                </div>
+
+                <div class="prompt-response hidden" id="prompt-response">
+                    <div class="response-line">&gt; loading module selector...</div>
+                </div>
+            </div>
+
+            <div id="network-section" class="network-section hidden">
+                <div class="network-divider"></div>
+                <div class="network-label">DEPENDENCY MAP / 6 MODULES</div>
+                <div class="network-map" id="network-map">
+                    <svg class="network-map-svg" id="network-map-svg" viewBox="0 230 600 270">
+                        <g id="network-map-lines"></g>
+                        <g id="network-map-nodes"></g>
+                    </svg>
+                </div>
+            </div>
+
+        </main>
+
+        <div id="system-hud" class="system-hud">
+            <div class="hud-header">[COMPLIANCE NOTICE]</div>
+            <div class="hud-body">
+                <div class="hud-line warning">Bias risk detected in active modules.</div>
+                <div class="hud-line">SESSION: 0457-A</div>
+                <div class="hud-line">TRACE: ACTIVE</div>
+                <div class="hud-line">DATA SOURCE: UNKNOWN</div>
+                <div class="hud-line">RISK: <span id="risk-value" class="risk-value">MEDIUM</span></div>
+            </div>
+        </div>
+
+        <footer class="os-footer">
+            <div class="footer-left">
+                <span class="system-code">SYS_v1.0_PROTOTYPE</span>
+                <span class="divider-char">│</span>
+                <span class="system-code">ARCHIVE_ACCESS: GRANTED</span>
+                <span class="divider-char">│</span>
+                <span class="system-code">ARCHIVE MODE: ENABLED</span>
+            </div>
+            <div class="footer-right">
+                <a href="impressum.html" class="system-code footer-link">[SYS_IMPRESSUM]</a>
+                <span class="divider-char">│</span>
+                <span class="timestamp">02/01/26 01:10 PM</span>
+            </div>
+        </footer>
+
+    </div>
+
+    <div id="loading-screen" class="loading-screen hidden">
+        <div class="loading-scanlines"></div>
+
+        <div class="loading-content">
+            <div class="loading-lines" id="loading-lines">
+            </div>
+
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+            <div class="loading-percent" id="loading-percent">0%</div>
+        </div>
+    </div>
+
+    <div class="vertical-glitch-line"></div>
+    <div class="bg-vertical-glitch-line-strong" aria-hidden="true"></div>
+    <div class="bg-scanline-sweep" aria-hidden="true"></div>
+
+    <div class="grid-overlay"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
