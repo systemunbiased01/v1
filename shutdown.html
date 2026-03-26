@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM_SHUTDOWN</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #00ff41;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 50px;
+            overflow: hidden;
+            /* Verhindert Scrollen */
+        }
+
+        /* Die Zeilen sind am Anfang unsichtbar */
+        .line {
+            opacity: 0;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        /* CSS-Animation: Macht die Zeilen nacheinander sichtbar */
+        @keyframes typeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .l1 {
+            animation: typeIn 0s forwards 0.5s;
+        }
+
+        .l2 {
+            animation: typeIn 0s forwards 1.5s;
+        }
+
+        .l3 {
+            animation: typeIn 0s forwards 2.5s;
+            color: rgba(0, 255, 65, 0.5);
+        }
+
+        .l4 {
+            animation: typeIn 0s forwards 4.0s;
+            color: #ff3300;
+        }
+
+        /* Warnung in Rot */
+        .l5 {
+            animation: typeIn 0s forwards 5.5s;
+        }
+
+        /* Der blinkende Cursor */
+        .cursor {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* Der versteckte Reboot-Button, der ganz am Ende auftaucht */
+        .reboot-btn {
+            opacity: 0;
+            display: inline-block;
+            margin-top: 50px;
+            color: rgba(0, 255, 65, 0.5);
+            text-decoration: none;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            padding: 10px 15px;
+            font-size: 12px;
+            transition: 0.3s;
+            animation: typeIn 2s forwards 8s;
+            /* Taucht erst nach 8 Sekunden sanft auf */
+        }
+
+        .reboot-btn:hover {
+            color: #000;
+            background-color: #00ff41;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="line l1">&gt; Initiating shutdown sequence...</div>
+    <div class="line l2">&gt; Clearing temporary cache [Bias_Logs]...</div>
+    <div class="line l3">&gt; Disconnecting from main server...</div>
+    <div class="line l4">&gt; WARNING: Systemic bias cannot be deleted. It persists in physical reality.</div>
+    <div class="line l5">&gt; System offline.<span class="cursor">_</span></div>
+
+    <a href="index.html" class="reboot-btn">[ REBOOT_SYSTEM ]</a>
+
+</body>
+
+</html>
