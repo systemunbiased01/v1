@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1440">
+    <title>Ist KI neutral? — MACHT & MICRO-WORK</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        /* LOKALES LAYOUT (Überschreibt nur die spezifischen Positionen für diese Seite) */
+
+        .os-header {
+            position: fixed;
+            top: 40px;
+            left: 60px;
+            z-index: 500;
+        }
+
+        .os-container {
+            background-color: transparent !important;
+            z-index: 10;
+        }
+
+        .os-main {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 6vw;
+            position: relative;
+            padding-left: 8vw;
+            padding-top: 25vh;
+            padding-bottom: 10vh;
+        }
+
+        /* BOX DIMENSIONS & POSITIONEN */
+        #box-1 {
+            width: 18vw;
+            min-width: 260px;
+            margin-top: 0;
+        }
+
+        #box-2 {
+            width: 24vw;
+            min-width: 320px;
+            margin-top: 15vh;
+            position: relative;
+            overflow: visible !important;
+        }
+
+        #box-3 {
+            width: 18vw;
+            min-width: 260px;
+            margin-top: 0;
+            margin-left: 4vw;
+            position: relative;
+            overflow: visible !important;
+        }
+
+        /* TERMINAL BOX LOOK */
+        .terminal-box {
+            background: #000000 !important;
+            border: 1px solid rgba(0, 255, 65, 0.2) !important;
+            box-shadow: 4px 4px 0px #000000, 5px 5px 0px rgba(0, 255, 65, 0.1) !important;
+            z-index: 20;
+            opacity: 0.35;
+            transition: opacity 0.3s ease, border-color 0.2s ease;
+            position: relative;
+        }
+
+        .terminal-box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 65, 0.25) 51%);
+            background-size: 100% 4px;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+            animation: scanline-flicker 4s linear infinite;
+        }
+
+        .terminal-box:hover {
+            opacity: 1;
+            border-color: rgba(0, 255, 65, 0.6) !important;
+            box-shadow: 4px 4px 0px #000000, 5px 5px 0px rgba(0, 255, 65, 0.15) !important;
+            animation: boxHoverGlitch 0.3s steps(1) infinite;
+            z-index: 999999 !important;
+        }
+
+        .terminal-box.open {
+            opacity: 1 !important;
+            z-index: 9999 !important;
+            border-color: rgba(0, 255, 65, 0.5) !important;
+            animation: none !important;
+            transform: none !important;
+            clip-path: none !important;
+            text-shadow: none !important;
+            box-shadow: 4px 4px 0px #000000, 5px 5px 0px rgba(0, 255, 65, 0.1) !important;
+        }
+
+        .terminal-box.open:hover {
+            animation: none !important;
+            transform: none !important;
+            clip-path: none !important;
+            z-index: 999999 !important;
+        }
+
+        @keyframes boxHoverGlitch {
+
+            0%,
+            100% {
+                transform: translate(0);
+                clip-path: none;
+                text-shadow: none;
+            }
+
+            20% {
+                transform: translate(-1px, 1px);
+                clip-path: inset(10% 0 30% 0);
+                text-shadow: 1px 0 rgba(255, 0, 222, 0.4), -1px 0 rgba(0, 255, 255, 0.4);
+            }
+
+            40% {
+                transform: translate(1px, -1px);
+                clip-path: inset(40% 0 40% 0);
+                text-shadow: none;
+            }
+
+            60% {
+                transform: translate(-1px, 0px);
+                clip-path: inset(80% 0 10% 0);
+            }
+
+            80% {
+                transform: translate(1px, 1px);
+                clip-path: none;
+                text-shadow: none;
+            }
+        }
+
+        /* COORDINATE LABELS FÜR MICROWORKERS */
+        #box-1::after {
+            content: 'LOC_DATA_REF: [04-D]';
+        }
+
+        #box-2::after {
+            content: 'LOC_DATA_REF: [05-E]';
+        }
+
+        #box-3::after {
+            content: 'LOC_DATA_REF: [06-F]';
+        }
+
+        #box-1::after,
+        #box-2::after,
+        #box-3::after {
+            position: absolute;
+            top: -18px;
+            left: 0;
+            font-size: 8px;
+            font-family: var(--font-mono), monospace;
+            color: rgba(0, 255, 65, 0.4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* BOX CONTENT */
+        .box-header {
+            padding: 8px 15px;
+            cursor: pointer;
+            color: var(--phosphor-green);
+            font-size: 12px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .box-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            padding: 0 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .terminal-box.open .box-content {
+            overflow-y: auto !important;
+            padding: 10px 15px;
+        }
+
+        /* CONTENT-DRIVEN HEIGHT WITH INTELLIGENT FLOOR-LOCK (Stop at 80vh) */
+        #box-1.open .box-content,
+        #box-3.open .box-content {
+            max-height: calc(80vh - 25vh - 0vh) !important;
+        }
+
+        #box-2.open .box-content {
+            max-height: calc(80vh - 25vh - 15vh) !important;
+        }
+
+        .data-stream,
+        .box-content p {
+            line-height: 1.8 !important;
+            letter-spacing: 0.8px !important;
+            font-family: var(--font-mono) !important;
+        }
+
+        .box-content::-webkit-scrollbar {
+            width: 2px;
+        }
+
+        .box-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .box-content::-webkit-scrollbar-thumb {
+            background: #00ff41;
+        }
+
+        /* BILDER DOCK (Falls du noch Screenshots für Microworkers hast) */
+        .external-media-container {
+            display: none !important;
+            flex-direction: column;
+            gap: 10px;
+            position: absolute;
+            left: calc(100% + 15px);
+            top: 0;
+            width: 160px;
+            z-index: 99999;
+        }
+
+        .terminal-box.open .external-media-container {
+            display: flex !important;
+        }
+
+        .floating-media {
+            display: block;
+            width: 100%;
+            height: auto;
+            min-height: 80px;
+            border: 1px solid #00ff41;
+            background: rgba(0, 255, 65, 0.08);
+            filter: grayscale(100%) sepia(100%) hue-rotate(80deg) brightness(0.8);
+            transition: transform 0.2s, filter 0.2s;
+            cursor: zoom-in;
+        }
+
+        .floating-media:hover {
+            transform: scale(2.4);
+            transform-origin: left center;
+            filter: none;
+            box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.9);
+            z-index: 999999 !important;
+            position: relative;
+        }
+
+        #box-3 .external-media-container {
+            left: auto !important;
+            right: calc(100% + 15px) !important;
+        }
+
+        #box-3 .floating-media:hover {
+            transform-origin: right center !important;
+        }
+
+        /* CORNER BRACKETS */
+        .corner-tl,
+        .corner-bl,
+        .corner-tr,
+        .corner-br {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            display: block;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .corner-tl {
+            top: 0;
+            left: 0;
+            border-top: 1px solid #00ff41;
+            border-left: 1px solid #00ff41;
+        }
+
+        .corner-bl {
+            bottom: 0;
+            left: 0;
+            border-bottom: 1px solid #00ff41;
+            border-left: 1px solid #00ff41;
+        }
+
+        .corner-tr {
+            top: 0;
+            right: 0;
+            border-top: 1px solid #00ff41;
+            border-right: 1px solid #00ff41;
+        }
+
+        .corner-br {
+            bottom: 0;
+            right: 0;
+            border-bottom: 1px solid #00ff41;
+            border-right: 1px solid #00ff41;
+        }
+
+        .minimal-exit {
+            position: fixed !important;
+            bottom: 210px !important;
+            left: 60px !important;
+            z-index: 10000 !important;
+        }
+
+        /* LINIES & GLITCHES */
+        .brutal-vertical-spine {
+            position: fixed;
+            top: 0;
+            left: 15vw;
+            width: 2px;
+            height: 100vh;
+            background: rgba(0, 255, 65, 0.4);
+            z-index: 1;
+            pointer-events: none;
+            animation: brutal-v-line 4s steps(3) infinite;
+        }
+
+        .brutal-horizontal-bus {
+            position: fixed;
+            top: 45vh;
+            left: 0;
+            width: 100vw;
+            height: 2px;
+            background: rgba(0, 255, 65, 0.6);
+            box-shadow: 0 4px 0 rgba(0, 255, 65, 0.2);
+            z-index: 1;
+            pointer-events: none;
+            animation: brutal-h-line 3s steps(2) infinite;
+        }
+
+        .sys-line {
+            position: absolute;
+            z-index: -1;
+            pointer-events: none;
+            border-style: solid;
+            border-color: rgba(0, 255, 65, 0.4);
+            animation: line-flicker 3s steps(2) infinite;
+            transition: width 0.3s ease, left 0.3s ease;
+        }
+
+        .line-1-to-2 {
+            left: -6vw;
+            top: calc(-15vh + 15px);
+            width: 6vw;
+            height: 15vh;
+            border-width: 0 0 1px 1px;
+        }
+
+        .line-2-to-3 {
+            left: -10vw;
+            top: 15px;
+            width: 10vw;
+            height: 15vh;
+            border-width: 1px 0 0 1px;
+        }
+
+        @keyframes brutal-v-line {
+            0% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            20% {
+                opacity: 0;
+            }
+
+            25% {
+                opacity: 0.8;
+                transform: translateX(2px);
+            }
+
+            30% {
+                opacity: 0.2;
+                transform: translateX(-2px);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: translateX(0);
+            }
+
+            55% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes brutal-h-line {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+                clip-path: inset(0 10% 0 0);
+            }
+
+            20% {
+                opacity: 0;
+            }
+
+            40% {
+                opacity: 0.5;
+                transform: translateY(5px);
+                clip-path: inset(0 80% 0 0);
+            }
+
+            45% {
+                opacity: 1;
+                transform: translateY(-3px);
+                clip-path: inset(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes line-flicker {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 0.1;
+            }
+
+            55% {
+                opacity: 0.7;
+            }
+        }
+
+        /* QUELLEN-LINKS */
+        .source-link {
+            text-decoration: none !important;
+            display: block;
+            cursor: pointer;
+        }
+
+        .source-link:hover {
+            text-decoration: underline !important;
+        }
+
+        /* LIGHTBOX SYSTEM */
+        .image-viewer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            z-index: 10000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+
+        .image-viewer-overlay.hidden {
+            display: none !important;
+        }
+
+        .image-viewer-window {
+            border: 1px solid var(--phosphor-green);
+            background: #050505;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            cursor: default;
+        }
+
+        .image-viewer-header {
+            background: rgba(0, 255, 65, 0.1);
+            border-bottom: 1px solid var(--phosphor-green);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .image-viewer-title {
+            color: var(--phosphor-green);
+            font-size: 11px;
+            letter-spacing: 2px;
+            font-family: var(--font-mono);
+        }
+
+        .image-viewer-close {
+            background: none;
+            border: none;
+            color: var(--phosphor-green);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .image-viewer-close:hover {
+            color: #fff;
+        }
+
+        .image-viewer-window img {
+            max-width: 100%;
+            max-height: calc(90vh - 40px);
+            object-fit: contain;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg-grid"></div>
+    <div class="crt-overlay"></div>
+    <div class="scanlines"></div>
+    <div class="grid-overlay"></div>
+    <div class="noise-overlay"></div>
+
+    <div class="brutal-vertical-spine"></div>
+    <div class="brutal-horizontal-bus"></div>
+
+    <div class="os-container">
+        <header class="os-header">
+            <div class="system-label">SYSTEM: POWER_STRUCTURES.OS</div>
+            <h1 class="query-line">Wer kontrolliert den Prompt?<span class="header-cursor">_</span></h1>
+        </header>
+
+        <main class="os-main">
+            <div class="terminal-box" id="box-1">
+                <div class="corner-tl"></div>
+                <div class="corner-tr"></div>
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+                <div class="box-header" onclick="toggleBox('box-1')">[GHOST_LABOR_EXPLOITATION]</div>
+                <div class="box-content">
+                    <p class="data-stream">&gt; PROBLEM: Die angebliche "Intelligenz" der Maschine ist eine Illusion.
+                        Sie wird durch unsichtbare, menschliche Ausbeutung erkauft.</p>
+                    <p class="data-stream">&gt; LABOR_REPORT: Im globalen Süden (z.B. in Kenia) zwingen Subunternehmen
+                        von Tech-Giganten wie OpenAI oder Meta sogenannte Microworker dazu, das Netz zu säubern. In 8-
+                        bis 10-Stunden-Schichten und für weniger als 2 US-Dollar pro Stunde müssen sie die dunkelsten
+                        Abgründe der Menschheit sichten: Texte und Videos von sexuellem Kindesmissbrauch, Folter, Suizid
+                        und Mord.</p>
+                    <p class="data-stream">&gt; TRAUMA_LOG: Dieser ständige Kontakt mit extremer Gewalt hat verheerende
+                        Folgen. Klagen und medizinische Gutachten belegen, dass fast alle dieser Arbeiter an schwerer
+                        Posttraumatischer Belastungsstörung (PTBS), massiven Depressionen und Angstzuständen erkranken.
+                        Viele berichten von Schlaflosigkeit, Panikattacken und der Unfähigkeit, danach ein normales
+                        Leben zu führen.</p>
+                    <p class="data-stream">&gt; SYSTEM_CHECK: Während das Silicon Valley mit der "sauberen" KI
+                        Milliarden scheffelt, bleiben die Arbeiter als psychische Wracks zurück. KI ist moderne
+                        Fabrikarbeit, die Gehirne zerstört.</p>
+                </div>
+            </div>
+
+            <div class="terminal-box" id="box-2">
+                <div class="sys-line line-1-to-2"></div>
+                <div class="corner-tl"></div>
+                <div class="corner-tr"></div>
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+                <div class="box-header" onclick="toggleBox('box-2')">[ELITE_POWER_MISUSE]</div>
+                <div class="box-content">
+                    <p class="data-stream">&gt; STUDIE: Die Plattform X und das "Grok"-Experiment.</p>
+                    <p class="data-stream">&gt; ABUSE: Elon Musk nutzt seine absolute Kontrolle über die Plattform,
+                        um ethische Schutzfilter (Safety Rails) bei seiner KI gezielt zu demontieren. Unter dem
+                        Deckmantel der "absoluten Redefreiheit" wird die KI zur Waffe gemacht.</p>
+                    <p class="data-stream">&gt; KONSEQUENZ: Die massenhafte und ungefilterte Erstellung sexualisierter
+                        Deepfakes von Frauen ist kein technischer Fehler (Bug). Es ist das logische Resultat eines
+                        Systems, in dem Opferschutz keinen Profit bringt. Wenn ein unregulierter Milliardär allein die
+                        Grenzen des Erlaubten diktiert, wird der digitale Raum für vulnerable Gruppen zu einer
+                        unkontrollierbaren Gefahrenzone.</p>
+                    <p class="data-stream">&gt; WARNUNG: Code ist Gesetz. Wer den Code kontrolliert, steht über
+                        demokratischer Verantwortung. Tech-Milliardäre entziehen sich bewusst der Justiz, während sie
+                        die Infrastruktur unserer Kommunikation besitzen.</p>
+                </div>
+            </div>
+
+            <div class="terminal-box" id="box-3">
+                <div class="sys-line line-2-to-3"></div>
+                <div class="corner-tl"></div>
+                <div class="corner-tr"></div>
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+                <div class="box-header" onclick="toggleBox('box-3')">[POWER_CONCLUSION]</div>
+                <div class="box-content">
+                    <p class="data-stream">&gt; FAZIT: KI ist keine demokratische Technologie. Sie befeuert einen neuen
+                        "Techno-Feudalismus". Tech-Giganten agieren wie digitale Feudalherren, die den öffentlichen Raum
+                        privatisieren und nach ihren eigenen, rücksichtslosen Regeln formen.</p>
+                    <p class="data-stream">&gt; VERDICT: Die Ausbeutung der traumatisierten Microworker im globalen
+                        Süden und die Demontage von Schutzräumen im globalen Norden sind zwei Seiten derselben Medaille.
+                        Wir müssen verlernen, KI als neutrales Werkzeug zu betrachten. Sie ist das Instrument einer
+                        radikalen Machtverschiebung von der Gesellschaft hin zu wenigen Individuen.</p>
+
+                    <br>
+                    <p class="data-stream" style="color: rgba(0, 255, 65, 0.4);">&gt; --- SOURCE_LOG ---</p>
+                    <a href="https://thelead.uk/ghosts-behind-ai" target="_blank" class="data-stream source-link"
+                        style="color: rgba(0, 255, 65, 0.4);">&gt; [01] The Lead (2023): The Ghosts Behind AI - The
+                        Hidden Human Labour Powering Machine Learning.</a>
+                    <a href="https://www.reuters.com/legal/litigation/elon-musks-grok-faces-global-scrutiny-sexualised-ai-photos-2026-02-17/"
+                        target="_blank" class="data-stream source-link" style="color: rgba(0, 255, 65, 0.4);">&gt; [02]
+                        Reuters (2026): Elon Musk's Grok faces global scrutiny over sexualised AI photos.</a>
+                    <a href="" target="_blank" class="data-stream source-link"
+                        style="color: rgba(0, 255, 65, 0.4);">&gt; [03] Mühlhoff, Rainer (2019): Künstliche Intelligenz
+                        und der neue Faschismus. (physical_copy)</a>
+                </div>
+            </div>
+        </main>
+
+        <a href="../index.html" class="minimal-exit">[exit]</a>
+
+        <a href="sprache.html" class="nav-raw nav-pos-top">^ [SYS: SPRACHE]</a>
+        <a href="geschlecht.html" class="nav-raw nav-pos-bottom">v [SYS: GESCHLECHT]</a>
+
+        <div id="system-hud" class="system-hud">
+            <div class="hud-header">[COMPLIANCE NOTICE]</div>
+            <div class="hud-body">
+                <div class="hud-line warning">Human_in_the_loop verification required.</div>
+                <div class="hud-line">SESSION: 0892-C</div>
+                <div class="hud-line">TRACE: GHOST_PROCESS</div>
+                <div class="hud-line">DATA SOURCE: HISTORY_REPETITION</div>
+                <div class="hud-line">RISK: <span class="risk-value" style="color: #ff4d4d;">HIGH</span></div>
+            </div>
+        </div>
+
+        <footer class="os-footer">
+            <div class="footer-left">
+                <span class="system-code">SYS_v1.0_PROTOTYPE</span>
+                <span class="divider-char">│</span>
+                <span class="system-code">GHOST_WORK_ARCHIVE</span>
+            </div>
+            <div class="footer-right">
+                <a href="../impressum.html" class="system-code footer-link">[SYS_IMPRESSUM]</a>
+                <span class="divider-char">│</span>
+                <span class="timestamp">02/01/26 01:10 PM</span>
+            </div>
+        </footer>
+    </div>
+
+    <div id="image-viewer" class="image-viewer-overlay hidden" onclick="closeImageViewer()">
+        <div class="image-viewer-window" onclick="event.stopPropagation()">
+            <div class="image-viewer-header">
+                <span class="image-viewer-title">[EVIDENCE_VIEWER]</span>
+                <button class="image-viewer-close" onclick="closeImageViewer()">[X]</button>
+            </div>
+            <img id="viewer-img" src="" alt="Enlarged Evidence">
+        </div>
+    </div>
+
+    <script>
+        function toggleBox(id) {
+            const box = document.getElementById(id);
+            const isOpen = box.classList.contains('open');
+
+            if (isOpen) {
+                box.querySelector('.box-content').classList.add('flicker-close');
+                setTimeout(() => {
+                    box.classList.remove('open');
+                    box.querySelector('.box-content').classList.remove('flicker-close');
+                }, 150);
+            } else {
+                box.classList.add('open');
+            }
+        }
+
+        // ==========================================
+        // Bild-Viewer Logik
+        // ==========================================
+        function openImageViewer(src) {
+            const viewer = document.getElementById('image-viewer');
+            const img = document.getElementById('viewer-img');
+            img.src = src;
+            viewer.classList.remove('hidden');
+        }
+
+        function closeImageViewer() {
+            document.getElementById('image-viewer').classList.add('hidden');
+        }
+
+        document.querySelectorAll('.floating-media').forEach(img => {
+            img.addEventListener('click', (e) => {
+                openImageViewer(e.target.src);
+            });
+        });
+
+        // Grid focus effect
+        const grid = document.querySelector('.grid-overlay');
+        document.querySelectorAll('.terminal-box').forEach(box => {
+            box.addEventListener('mouseenter', () => {
+                if (grid) grid.style.opacity = '0.2';
+            });
+            box.addEventListener('mouseleave', () => {
+                if (grid) grid.style.opacity = '';
+            });
+        });
+    </script>
+</body>
+
+</html>

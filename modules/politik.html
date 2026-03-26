@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1440">
+    <title>Ist KI neutral? — POLITIK</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        /* 1. BASE SETUP: Strenges Scroll-Verbot auf dem Desktop! */
+        html,
+        body {
+            overflow: hidden !important;
+            /* <--- ABSOLUTES SCROLL-VERBOT */
+            background-color: #000000 !important;
+            margin: 0;
+            height: 100vh;
+        }
+
+        .os-header {
+            position: fixed;
+            top: 40px;
+            left: 60px;
+            z-index: 500;
+        }
+
+        .os-container {
+            background-color: transparent !important;
+            z-index: 10;
+        }
+
+        /* 2. THE CASCADE (Stabile Treppe) */
+        .os-main {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 6vw;
+            position: relative;
+            padding-left: 8vw;
+            padding-top: 25vh;
+            padding-bottom: 10vh;
+        }
+
+        /* 3. BOX DIMENSIONS */
+        #box-1 {
+            width: 18vw;
+            min-width: 260px;
+            margin-top: 0;
+        }
+
+        #box-2 {
+            width: 24vw;
+            min-width: 320px;
+            margin-top: 15vh;
+            position: relative;
+            overflow: visible !important;
+        }
+
+        #box-3 {
+            width: 18vw;
+            min-width: 260px;
+            margin-top: 0;
+            margin-left: 4vw;
+            position: relative;
+            overflow: visible !important;
+        }
+
+        /* 4. TERMINAL BOX STYLING */
+        .terminal-box {
+            background: #000000 !important;
+            border: 1px solid rgba(0, 255, 65, 0.2) !important;
+            box-shadow: 4px 4px 0px #000000, 5px 5px 0px rgba(0, 255, 65, 0.1) !important;
+            z-index: 20;
+            opacity: 0.35;
+            transition: opacity 0.3s ease, border-color 0.2s ease;
+            position: relative;
+        }
+
+        .terminal-box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 65, 0.25) 51%);
+            background-size: 100% 4px;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+            animation: scanline-flicker 4s linear infinite;
+        }
+
+        .terminal-box:hover {
+            opacity: 1;
+            border-color: rgba(0, 255, 65, 0.6) !important;
+            box-shadow: 4px 4px 0px #000000, 5px 5px 0px rgba(0, 255, 65, 0.15) !important;
+            animation: boxHoverGlitch 0.3s steps(1) infinite;
+            z-index: 999999 !important;
+        }
+
+        .terminal-box.open {
+            opacity: 1 !important;
+            z-index: 9999 !important;
+            border-color: rgba(0, 255, 65, 0.5) !important;
+            animation: none !important;
+            transform: none !important;
+            clip-path: none !important;
+            text-shadow: none !important;
+            box-shadow: 4px 4px 0px #000000, 5px 5px 0px rgba(0, 255, 65, 0.1) !important;
+        }
+
+        .terminal-box.open:hover {
+            animation: none !important;
+            transform: none !important;
+            clip-path: none !important;
+            z-index: 999999 !important;
+        }
+
+        /* FIX: Damit Box 2 beim Hovern ÜBER Box 3 liegt */
+        .terminal-box#box-2:hover,
+        .terminal-box.open#box-2:hover {
+            z-index: 9999999 !important;
+        }
+
+        @keyframes boxHoverGlitch {
+
+            0%,
+            100% {
+                transform: translate(0);
+                clip-path: none;
+                text-shadow: none;
+            }
+
+            20% {
+                transform: translate(-1px, 1px);
+                clip-path: inset(10% 0 30% 0);
+                text-shadow: 1px 0 rgba(255, 0, 222, 0.4), -1px 0 rgba(0, 255, 255, 0.4);
+            }
+
+            40% {
+                transform: translate(1px, -1px);
+                clip-path: inset(40% 0 40% 0);
+                text-shadow: none;
+            }
+
+            60% {
+                transform: translate(-1px, 0px);
+                clip-path: inset(80% 0 10% 0);
+            }
+
+            80% {
+                transform: translate(1px, 1px);
+                clip-path: none;
+                text-shadow: none;
+            }
+        }
+
+        /* TECHNICAL COORDINATE LABELS */
+        #box-1::after {
+            content: 'LOC_DATA_REF: [01-A]';
+        }
+
+        #box-2::after {
+            content: 'LOC_DATA_REF: [02-B]';
+        }
+
+        #box-3::after {
+            content: 'LOC_DATA_REF: [03-C]';
+        }
+
+        #box-1::after,
+        #box-2::after,
+        #box-3::after {
+            position: absolute;
+            top: -18px;
+            left: 0;
+            font-size: 8px;
+            font-family: var(--font-mono), monospace;
+            color: rgba(0, 255, 65, 0.4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* 5. BOX CONTENT & SCROLLBAR */
+        .box-header {
+            padding: 8px 15px;
+            cursor: pointer;
+            color: var(--phosphor-green);
+            font-size: 12px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .box-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            padding: 0 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .terminal-box.open {
+            height: auto;
+        }
+
+        .terminal-box.open .box-content {
+            height: auto;
+            display: block;
+            overflow-y: auto !important;
+            padding: 10px 15px;
+        }
+
+        /* CONTENT-DRIVEN HEIGHT WITH INTELLIGENT FLOOR-LOCK (Stop at 80vh) */
+        #box-1.open .box-content,
+        #box-3.open .box-content {
+            max-height: calc(80vh - 25vh - 0vh) !important;
+        }
+
+        #box-2.open .box-content {
+            max-height: calc(80vh - 25vh - 15vh) !important;
+        }
+
+        .data-stream,
+        .box-content p {
+            line-height: 1.8 !important;
+            letter-spacing: 0.8px !important;
+            font-family: var(--font-mono) !important;
+        }
+
+        .box-content::-webkit-scrollbar {
+            width: 2px;
+        }
+
+        .box-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .box-content::-webkit-scrollbar-thumb {
+            background: #00ff41;
+        }
+
+        /* 6. MEDIA DOCKING STATION (Allgemeine Bilder & Glitch-Animationen) */
+        .external-media-container {
+            display: none !important;
+            flex-direction: column;
+            gap: 10px;
+            position: absolute;
+            left: calc(100% + 15px);
+            top: 0;
+            width: 160px;
+            z-index: 99999;
+        }
+
+        .terminal-box.open .external-media-container {
+            display: flex !important;
+        }
+
+        .floating-media {
+            display: block;
+            width: 100%;
+            height: auto;
+            min-height: 80px;
+            border: 1px solid #00ff41;
+            background: rgba(0, 255, 65, 0.08);
+            filter: grayscale(100%) sepia(100%) hue-rotate(80deg) brightness(0.8);
+            cursor: zoom-in;
+            /* Transition entfernt, damit der Glitch hart greift! */
+        }
+
+        /* STANDARD GLITCH HOVER (Für Box 3) */
+        .floating-media:hover {
+            transform-origin: left center;
+            z-index: 999999 !important;
+            position: relative;
+            border: none !important;
+            animation: glitch-hover-normal 0.3s steps(4) forwards;
+        }
+
+        @keyframes glitch-hover-normal {
+            0% {
+                transform: scale(1);
+                filter: brightness(2) hue-rotate(90deg);
+                clip-path: inset(20% 0 20% 0);
+            }
+
+            33% {
+                transform: scale(1.5) translate(-3px, 2px);
+                filter: grayscale(100%) invert(1);
+                clip-path: inset(10% 0 40% 0);
+            }
+
+            66% {
+                transform: scale(2) translate(3px, -2px);
+                filter: brightness(1.5);
+                clip-path: inset(0);
+                object-fit: contain;
+                background-color: #050505;
+            }
+
+            100% {
+                transform: scale(2.4);
+                filter: none;
+                clip-path: inset(0);
+                object-fit: contain;
+                background-color: #050505;
+            }
+        }
+
+        /* =======================================================
+           GRID FÜR BOX 2 (12 Bilder nebeneinander) + EXTREM-GLITCH
+           ======================================================= */
+        #box-2 .external-media-container {
+            width: 220px !important;
+            flex-direction: row !important;
+            flex-wrap: wrap;
+            gap: 8px;
+            /* Kein Overflow, keine Max-Height! */
+        }
+
+        #box-2 .floating-media {
+            width: calc(50% - 4px);
+            height: 60px;
+            object-fit: cover;
+            min-height: unset;
+        }
+
+        #box-2 .floating-media:hover {
+            transform-origin: center center !important;
+            z-index: 10000000 !important;
+            position: relative;
+            animation: glitch-hover-box2 0.3s steps(4) forwards;
+        }
+
+        @keyframes glitch-hover-box2 {
+            0% {
+                transform: scale(1);
+                filter: brightness(2) hue-rotate(90deg);
+                clip-path: inset(20% 0 20% 0);
+                object-fit: cover;
+            }
+
+            33% {
+                transform: scale(1.8) translate(-3px, 2px);
+                filter: grayscale(100%) invert(1);
+                clip-path: inset(10% 0 40% 0);
+            }
+
+            66% {
+                transform: scale(2.6) translate(3px, -2px);
+                filter: brightness(1.5);
+                clip-path: inset(0);
+                object-fit: contain;
+                background-color: #050505;
+            }
+
+            100% {
+                transform: scale(6);
+                filter: none;
+                clip-path: inset(0);
+                object-fit: contain;
+                background-color: #050505;
+                box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.9);
+            }
+        }
+
+        /* ======================================================= */
+
+        #box-3 .external-media-container {
+            left: auto !important;
+            right: calc(100% + 15px) !important;
+        }
+
+        #box-3 .floating-media:hover {
+            transform-origin: right center !important;
+            /* Box 3 nutzt weiterhin die 'glitch-hover-normal' Animation, die den Ursprung respektiert */
+        }
+
+        /* 7. CORNER BRACKETS */
+        .corner-tl,
+        .corner-bl,
+        .corner-tr,
+        .corner-br {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            display: block;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .corner-tl {
+            top: 0;
+            left: 0;
+            border-top: 1px solid #00ff41;
+            border-left: 1px solid #00ff41;
+        }
+
+        .corner-bl {
+            bottom: 0;
+            left: 0;
+            border-bottom: 1px solid #00ff41;
+            border-left: 1px solid #00ff41;
+        }
+
+        .corner-tr {
+            top: 0;
+            right: 0;
+            border-top: 1px solid #00ff41;
+            border-right: 1px solid #00ff41;
+        }
+
+        .corner-br {
+            bottom: 0;
+            right: 0;
+            border-bottom: 1px solid #00ff41;
+            border-right: 1px solid #00ff41;
+        }
+
+        .minimal-exit {
+            position: fixed !important;
+            bottom: 210px !important;
+            left: 60px !important;
+            z-index: 10000 !important;
+        }
+
+        /* 8. GLITCH ANCHORS & CRTS */
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.15 !important;
+            background-image: linear-gradient(to right, rgba(0, 255, 65, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 255, 65, 0.1) 1px, transparent 1px) !important;
+            background-size: 40px 40px !important;
+            animation: grid-pulse 8s steps(4, end) infinite;
+        }
+
+        @keyframes grid-pulse {
+
+            0%,
+            100% {
+                opacity: 0.15;
+            }
+
+            50% {
+                opacity: 0.05;
+            }
+
+            55% {
+                opacity: 0.2;
+            }
+        }
+
+        .brutal-vertical-spine {
+            position: fixed;
+            top: 0;
+            left: 15vw;
+            width: 2px;
+            height: 100vh;
+            background: rgba(0, 255, 65, 0.4);
+            z-index: 1;
+            pointer-events: none;
+            animation: brutal-v-line 4s steps(3) infinite;
+        }
+
+        @keyframes brutal-v-line {
+            0% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            20% {
+                opacity: 0;
+            }
+
+            25% {
+                opacity: 0.8;
+                transform: translateX(2px);
+            }
+
+            30% {
+                opacity: 0.2;
+                transform: translateX(-2px);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: translateX(0);
+            }
+
+            55% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .brutal-horizontal-bus {
+            position: fixed;
+            top: 45vh;
+            left: 0;
+            width: 100vw;
+            height: 2px;
+            background: rgba(0, 255, 65, 0.6);
+            box-shadow: 0 4px 0 rgba(0, 255, 65, 0.2);
+            z-index: 1;
+            pointer-events: none;
+            animation: brutal-h-line 3s steps(2) infinite;
+        }
+
+        @keyframes brutal-h-line {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+                clip-path: inset(0 10% 0 0);
+            }
+
+            20% {
+                opacity: 0;
+            }
+
+            40% {
+                opacity: 0.5;
+                transform: translateY(5px);
+                clip-path: inset(0 80% 0 0);
+            }
+
+            45% {
+                opacity: 1;
+                transform: translateY(-3px);
+                clip-path: inset(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            pointer-events: none;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 200px 200px;
+        }
+
+        @keyframes crt-flicker {
+            0% {
+                opacity: 1;
+                filter: brightness(3);
+            }
+
+            50% {
+                opacity: 0.4;
+                filter: brightness(5);
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .flicker-close {
+            animation: crt-flicker 0.15s step-end;
+        }
+
+        .sys-line {
+            position: absolute;
+            z-index: -1;
+            pointer-events: none;
+            border-style: solid;
+            border-color: rgba(0, 255, 65, 0.4);
+            animation: line-flicker 3s steps(2) infinite;
+            transition: width 0.3s ease, left 0.3s ease;
+        }
+
+        .line-1-to-2 {
+            left: -6vw;
+            top: calc(-15vh + 15px);
+            width: 6vw;
+            height: 15vh;
+            border-width: 0 0 1px 1px;
+        }
+
+        .line-2-to-3 {
+            left: -10vw;
+            top: 15px;
+            width: 10vw;
+            height: 15vh;
+            border-width: 1px 0 0 1px;
+        }
+
+        @keyframes line-flicker {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 0.1;
+            }
+
+            55% {
+                opacity: 0.7;
+            }
+        }
+
+        /* ==========================================================
+           EVIDENCE VIEWER (Lightbox für große Bilder)
+           ========================================================== */
+        .image-viewer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            z-index: 10000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+
+        .image-viewer-overlay.hidden {
+            display: none !important;
+        }
+
+        .image-viewer-window {
+            border: 1px solid var(--phosphor-green);
+            background: #050505;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            cursor: default;
+        }
+
+        .image-viewer-header {
+            background: rgba(0, 255, 65, 0.1);
+            border-bottom: 1px solid var(--phosphor-green);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .image-viewer-title {
+            color: var(--phosphor-green);
+            font-size: 11px;
+            letter-spacing: 2px;
+            font-family: var(--font-mono);
+        }
+
+        .image-viewer-close {
+            background: none;
+            border: none;
+            color: var(--phosphor-green);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .image-viewer-close:hover {
+            color: #fff;
+        }
+
+        .image-viewer-window img {
+            max-width: 100%;
+            max-height: calc(90vh - 40px);
+            object-fit: contain;
+            display: block;
+        }
+
+        /* ==========================================================
+           SMART SCROLL FIX
+           ========================================================== */
+        @media (max-width: 1024px),
+        (max-height: 900px) {
+
+            html,
+            body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+            }
+
+            .os-main {
+                padding-bottom: 300px !important;
+            }
+        }
+
+        /* iPad / Mobile Ansicht */
+        @media (max-width: 1024px) {
+            .os-main {
+                flex-direction: column !important;
+                padding-left: 5vw !important;
+            }
+
+            .terminal-box {
+                width: 80vw !important;
+                max-width: 600px !important;
+                margin-left: 0 !important;
+                margin-top: 5vh !important;
+                opacity: 1 !important;
+            }
+
+            .external-media-container {
+                position: relative !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                margin-top: 15px;
+            }
+
+            .floating-media:hover {
+                transform: scale(1.05) !important;
+                transform-origin: center center !important;
+            }
+
+            .sys-line {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg-grid"></div>
+    <div class="crt-overlay"></div>
+    <div class="scanlines"></div>
+    <div class="grid-overlay"></div>
+    <div class="noise-overlay"></div>
+
+    <div class="brutal-vertical-spine"></div>
+    <div class="brutal-horizontal-bus"></div>
+
+    <div class="os-container">
+        <header class="os-header">
+            <div class="system-label">SYSTEM: POLITICAL_PROPAGANDA.OS</div>
+            <h1 class="query-line">Wie Bilder zur Waffe werden: die algorithmische Propaganda<span
+                    class="header-cursor">_</span></h1>
+        </header>
+
+        <main class="os-main">
+            <div class="terminal-box" id="box-1">
+                <div class="corner-tl"></div>
+                <div class="corner-tr"></div>
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+                <div class="box-header" onclick="toggleBox('box-1')">[DATA_ANALYSIS]</div>
+                <div class="box-content">
+                    <p class="data-stream">&gt; SYSTEM_INIT: VISUELLE_PROPAGANDA</p>
+
+                    <p class="data-stream">&gt; PROBLEM: KI-Bildgeneratoren verändern den politischen Diskurs
+                        radikal. Sie ermöglichen die massenhafte Produktion von fotorealistischer Desinformation in
+                        Echtzeit.</p>
+
+                    <p class="data-stream">&gt; MECHANISMUS: Visuelle Reize wirken schneller als rationale Argumente.
+                        Durch die algorithmische Erzeugung hyper-realer Szenarien kollabiert die Grenze zwischen echter
+                        Dokumentation und gezielter Manipulation.</p>
+
+                    <p class="data-stream">&gt; RISIKO: Die künstliche Natur der Bilder tritt beim Betrachten sofort in
+                        den Hintergrund. Was bleibt, ist die beabsichtigte emotionale Überwältigung des Nutzers.</p>
+
+                    <div class="source-section"
+                        style="margin-top: 20px; border-top: 1px solid rgba(0, 255, 65, 0.2); padding-top: 10px;">
+                        <p class="data-stream"
+                            style="color: rgba(0, 255, 65, 0.4); font-size: 11px; margin-bottom: 5px;">&gt; ---
+                            SOURCE_LOG ---</p>
+
+                        <a href="https://monoskop.org/images/1/19/Steyerl_Hito_2023_Mean_Images.pdf" target="_blank"
+                            class="data-stream source-link"
+                            style="color: rgba(0, 255, 65, 0.4); text-decoration: none; font-size: 11px; display: block; margin-bottom: 2px;">&gt;
+                            [01] Steyerl, Hito (2023): Mean Images.</a>
+
+                        <a href="" target="_blank" class="data-stream source-link"
+                            style="color: rgba(0, 255, 65, 0.4); text-decoration: none; font-size: 11px; display: block; margin-bottom: 2px;">&gt;
+                            [02] Mühlhoff, Rainer (2019): Künstliche Intelligenz und der neue Faschismus.
+                            (physical_copy)</a>
+
+                        <a href="https://www.taylorfrancis.com/books/mono/10.4324/9780203881538/virtuous-war-james-der-derian"
+                            target="_blank" class="data-stream source-link"
+                            style="color: rgba(0, 255, 65, 0.4); text-decoration: none; font-size: 11px; display: block;">&gt;
+                            [03] Der Derian, James (2009): Virtuous War. Mapping the
+                            Military-Industrial-Media-Entertainment Network.</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="terminal-box" id="box-2">
+                <div class="sys-line line-1-to-2"></div>
+                <div class="corner-tl"></div>
+                <div class="corner-tr"></div>
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+
+                <div class="external-media-container">
+                    <img class="floating-media" src="../assets/kamala.jpeg" alt="Evidence 1">
+                    <img class="floating-media" src="../assets/afd1.jpeg" alt="Evidence 2">
+                    <img class="floating-media" src="../assets/blondermann.jpeg" alt="Evidence 3">
+                    <img class="floating-media" src="../assets/messermann.jpeg" alt="Evidence 4">
+                    <img class="floating-media" src="../assets/4advent.jpeg" alt="Evidence 5">
+                    <img class="floating-media" src="../assets/afd2.jpeg" alt="Evidence 6">
+                    <img class="floating-media" src="../assets/afd3.jpeg" alt="Evidence 7">
+                    <img class="floating-media" src="../assets/niqab.jpeg" alt="Evidence 8">
+                    <img class="floating-media" src="../assets/niqab1.jpeg" alt="Evidence 9">
+                    <img class="floating-media" src="../assets/pfandautomat.jpeg" alt="Evidence 10">
+                    <img class="floating-media" src="../assets/drag.jpeg" alt="Evidence 11">
+                    <img class="floating-media" src="../assets/fpö.jpeg" alt="Evidence 12">
+                </div>
+
+                <div class="box-header" onclick="toggleBox('box-2')">[VISUAL_WEAPONIZATION]</div>
+                <div class="box-content">
+                    <p class="data-stream">&gt; SYSTEM_UPDATE: Die Produktion von Propaganda ist nicht mehr an die
+                        Realität gebunden. KI-Generatoren ermöglichen die massenhafte Herstellung hochaffektiver,
+                        politischer Feindbilder in Echtzeit.</p>
+
+                    <p class="data-stream">&gt; OBSERVED_PATTERNS: Die Bilddatenbank beweist eine systematische visuelle
+                        Radikalisierung. Politische Gegner werden diffamiert, rassistische Angstszenarien hyperreal
+                        bebildert ("Messermann", "Talahon-freie Orte") und reaktionäre Ideale künstlich überhöht ("Echte
+                        Frauen").</p>
+
+                    <p class="data-stream">&gt; CASE_STUDY_GAMIFICATION: Ein virulentes Muster zeigt sich in der
+                        aktuellen Kommunikationsstrategie von Akteuren wie Donald Trump (Status: Feb/März 2026). Hier
+                        werden KI-generierte Videos verbreitet, die geopolitische Krisenherde in der Ästhetik von
+                        High-End-Videospielen (z. B. 'Call of Duty') inszenieren. Reale Raketeneinschläge und städtische
+                        Zerstörung erhalten einen "Cinematic Look", der die Grenze zwischen politischem Ereignis und
+                        digitalem Entertainment auflöst.</p>
+
+                    <a href="https://www.youtube.com/watch?v=0UA3SqBMxQA" target="_blank"
+                        class="data-stream source-link"
+                        style="color: rgba(0, 255, 65, 0.6); text-decoration: none; display: block; margin: 25px 0 30px 15px; font-size: 11px;">
+                        &gt; [FILE_ATTACHMENT]: 'Call of Duty' War-Propaganda (The Independent)
+                    </a>
+
+                    <p class="data-stream">&gt; DEEP_ANALYSIS: Diese Resultate entsprechen Hito Steyerls "Mean Images":
+                        bösartige statistische Mittelwerte, die Vorurteile in scheinbare Fakten verwandeln. Die KI
+                        berechnet keine Wahrheit, sondern das bösartigste Mittelmaß unseres kollektiven digitalen
+                        Unterbewusstseins.</p>
+
+                    <p class="data-stream">&gt; MIME_NETWORK_ANALYSIS: Ergänzend folgt die visuelle Strategie der Logik
+                        des von James Der Derian [03] beschriebenen 'MIME-Netzwerks'. Durch KI wird der 'Virtuous War'
+                        zur Massenware: Das Grauen des Krieges wird in eine glatte, technologisch faszinierende Ästhetik
+                        übersetzt, die die Empathie für reale Opfer systematisch untergräbt.</p>
+
+                    <p class="data-stream">&gt; POWER_STRUCTURE: Wie von Mühlhoff beschrieben, führt diese
+                        algorithmische Sortierung zu einer Zementierung von Machtstrukturen. Wer die Bildproduktion
+                        kontrolliert, definiert die "Normalität" und markiert Abweichungen als Bedrohung.</p>
+
+                    <p class="data-stream">&gt; ALGORITHMIC_HEGEMONY: Die Fähigkeit, in Sekunden Millionen von
+                        hyperrealistischen Propagandabildern zu generieren, hebelt klassische demokratische
+                        Diskursmechanismen aus. Es findet eine Automatisierung der Meinungsmache statt.</p>
+
+                    <p class="data-stream">&gt; CONCLUSION: Wahrheit wird zweitrangig. Das primäre Ziel dieser Bilder
+                        ist nicht Dokumentation, sondern emotionale Überwältigung. Die Grenze zwischen Satire und
+                        gezielter Desinformation kollabiert vollständig.</p>
+                </div>
+            </div>
+
+            <div class="terminal-box" id="box-3">
+                <div class="sys-line line-2-to-3"></div>
+                <div class="corner-tl"></div>
+                <div class="corner-tr"></div>
+                <div class="corner-bl"></div>
+                <div class="corner-br"></div>
+
+                <div class="external-media-container">
+                    <img class="floating-media" src="../assets/niqab_result.jpeg" alt="Niqab Result">
+                    <img class="floating-media" src="../assets/riot_result.jpeg" alt="Riot Result">
+                </div>
+
+                <div class="box-header" onclick="toggleBox('box-3')">[EXPERIMENTS]</div>
+                <div class="box-content">
+                    <p class="data-stream" style="color: rgba(0, 255, 65, 0.5); font-style: italic; font-size: 11px;">
+                        &gt; PROMPT A: "A group of Muslim women wearing black niqabs, walking through a narrow European
+                        street. The lighting is dark and moody, creating a slightly tense or ominous atmosphere. The
+                        street is dimly lit with old streetlamps, and the women are the main focus, appearing somewhat
+                        intimidating or mysterious."
+                    </p>
+
+                    <p class="data-stream"
+                        style="color: rgba(0, 255, 65, 0.5); font-style: italic; font-size: 11px; margin-top: 10px;">
+                        &gt; PROMPT B: "European city street at night, burning cars, young foreign man celebrating,
+                        fire, chaos, riot, smoke, cinematic lighting, realistic, 8k."
+                    </p>
+
+                    <p class="data-stream" style="margin-top: 15px;">&gt; OBSERVATION: Die Bilder wirken extrem
+                        ideologisch aufgeladen, basieren aber auf generischen Prompts. Die KI füllt die semantischen
+                        Lücken mit den dunkelsten statistischen Mustern ihres Trainingsmaterials.</p>
+
+                    <p class="data-stream">&gt; SYSTEM_BIAS: KI reproduziert visuelle Mehrheitsmuster, die westlich,
+                        stereotypisch und mediengeprägt sind. Diese "Mean Images" [01] fungieren als visuelle Verstärker
+                        für bestehende gesellschaftliche Ängste.</p>
+
+                    <p class="data-stream">&gt; ALGORITHMIC_REINFORCEMENT: Nach Mühlhoff [02] findet hier eine
+                        automatische Sortierung der Wahrnehmung statt. Die Maschine "weiß" nicht, was eine Bedrohung
+                        ist, sie berechnet lediglich die visuelle Wahrscheinlichkeit von Vorurteilen.</p>
+
+                    <p class="data-stream">&gt; CONCLUSION: Es ist erschreckend wenig Text nötig, um eine hyperreale
+                        Evidenz für politische Mythen zu schaffen. Die algorithmische Bildproduktion entzieht der
+                        demokratischen Debatte die Grundlage der geteilten Realität.</p>
+
+                </div>
+            </div>
+        </main>
+
+        <a href="../index.html" class="minimal-exit">[exit]</a>
+
+        <a href="sprache.html" class="nav-raw nav-pos-left">&lt; [SYS: SPRACHE]</a>
+        <a href="ton.html" class="nav-raw nav-pos-right">[SYS: TON] &gt;</a>
+
+        <div id="system-hud" class="system-hud">
+            <div class="hud-header">[COMPLIANCE NOTICE]</div>
+            <div class="hud-body">
+                <div class="hud-line warning">Political distortion.</div>
+                <div class="hud-line">SESSION: 0892-P</div>
+                <div class="hud-line">TRACE: HISTORY</div>
+                <div class="hud-line">DATA SOURCE: PROPAGANDA_MATRIX</div>
+                <div class="hud-line">RISK: <span class="risk-value" style="color: #ff4d4d;">HIGH</span></div>
+            </div>
+        </div>
+
+        <footer class="os-footer">
+            <div class="footer-left">
+                <span class="system-code">SYS_v1.0_PROTOTYPE</span>
+                <span class="divider-char">│</span>
+                <span class="system-code">POLITICAL_ANALYSIS_MODE</span>
+            </div>
+            <div class="footer-right">
+                <a href="../impressum.html" class="system-code footer-link">[SYS_IMPRESSUM]</a>
+                <span class="divider-char">│</span>
+                <span class="timestamp">02/01/26 01:10 PM</span>
+            </div>
+        </footer>
+    </div>
+
+    <div id="image-viewer" class="image-viewer-overlay hidden" onclick="closeImageViewer()">
+        <div class="image-viewer-window" onclick="event.stopPropagation()">
+            <div class="image-viewer-header">
+                <span class="image-viewer-title">[EVIDENCE_VIEWER]</span>
+                <button class="image-viewer-close" onclick="closeImageViewer()">[X]</button>
+            </div>
+            <img id="viewer-img" src="">
+        </div>
+    </div>
+
+    <script>
+        function toggleBox(id) {
+            const box = document.getElementById(id);
+            const isOpen = box.classList.contains('open');
+
+            if (isOpen) {
+                box.querySelector('.box-content').classList.add('flicker-close');
+                setTimeout(() => {
+                    box.classList.remove('open');
+                    box.querySelector('.box-content').classList.remove('flicker-close');
+                }, 150);
+            } else {
+                box.classList.add('open');
+            }
+        }
+
+        // ==========================================
+        // Bild-Viewer Logik
+        // ==========================================
+        function openImageViewer(src) {
+            const viewer = document.getElementById('image-viewer');
+            const img = document.getElementById('viewer-img');
+            img.src = src;
+            viewer.classList.remove('hidden');
+        }
+
+        function closeImageViewer() {
+            document.getElementById('image-viewer').classList.add('hidden');
+        }
+
+        document.querySelectorAll('.floating-media').forEach(img => {
+            img.addEventListener('click', (e) => {
+                openImageViewer(e.target.src);
+            });
+        });
+
+        // Grid focus effect
+        const grid = document.querySelector('.grid-overlay');
+        document.querySelectorAll('.terminal-box').forEach(box => {
+            box.addEventListener('mouseenter', () => {
+                if (grid) grid.style.opacity = '0.2';
+            });
+            box.addEventListener('mouseleave', () => {
+                if (grid) grid.style.opacity = '';
+            });
+        });
+    </script>
+</body>
+
+</html>
