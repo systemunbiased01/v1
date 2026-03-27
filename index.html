@@ -274,7 +274,7 @@
                 <span class="divider-char">│</span>
                 <a href="impressum.html" class="system-code footer-link">[SYS_IMPRESSUM]</a>
                 <span class="divider-char">│</span>
-                <span class="timestamp">02/01/26 01:10 PM</span>
+<span class="timestamp" id="system-clock">02/01/26 01:10 PM</span>
             </div>
         </footer>
 
@@ -300,6 +300,38 @@
 
     <div class="grid-overlay"></div>
 
+    <script>
+        function updateSystemTime() {
+            const clockElement = document.getElementById('system-clock');
+            if (!clockElement) return;
+
+            const now = new Date();
+            
+            // Datum formatieren (DD/MM/YY)
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = String(now.getFullYear()).slice(-2);
+            
+            // Uhrzeit formatieren (12-Stunden-Format mit AM/PM)
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; // Die Stunde "0" wird zu "12"
+            const strHours = String(hours).padStart(2, '0');
+
+            // Den Text auf der Seite austauschen
+            clockElement.textContent = `${day}/${month}/${year} ${strHours}:${minutes} ${ampm}`;
+        }
+        
+        // Die Uhr sofort einmal starten und dann alle 1000 Millisekunden (1 Sekunde) aktualisieren
+        updateSystemTime();
+        setInterval(updateSystemTime, 1000);
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
     <script src="script.js"></script>
 </body>
 
